@@ -1,0 +1,4 @@
+PushButton.c:35:6:PushButton_Init	24	static
+PushButton.c:62:6:PushButton_SetMode	24	static
+PushButton.c:83:6:PushButton_ClearLog	16	static
+PushButton.c:93:6:PushButton_Routine	32	static

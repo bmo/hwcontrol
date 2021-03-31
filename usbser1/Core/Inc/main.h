@@ -37,6 +37,7 @@ extern "C" {
 #include "UsrTimer.h"
 #include "EvtQueue.h"
 #include "PushButton.h"
+#include "ringbuffer.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -56,17 +57,25 @@ extern "C" {
 
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
+
+/* USER CODE BEGIN EFP */
 void SysTick_Handler_5ms();
 void SysTick_Handler_1ms();
 void UartPrintf(const char *format, ...);
-
-/* USER CODE BEGIN EFP */
-
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
 #define TEST_BTN_Pin GPIO_PIN_1
 #define TEST_BTN_GPIO_Port GPIOB
+#define ENC_CLK_Pin GPIO_PIN_8
+#define ENC_CLK_GPIO_Port GPIOB
+#define ENC_DATA_Pin GPIO_PIN_9
+#define ENC_DATA_GPIO_Port GPIOB
+
+#define CMD_BUFFER_SIZE 1024
+
+#define USB_BUFFER_SIZE 1024
+
 /* USER CODE BEGIN Private defines */
 #define TEST_LED_Pin GPIO_PIN_0
 #define TEST_LED_GPIO_Port GPIOB

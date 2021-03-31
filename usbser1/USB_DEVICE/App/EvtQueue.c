@@ -45,7 +45,7 @@ bool Evt_EnQueue(uint8_t *event)
 	{
 		evt_queue.buff[evt_queue.head][i] = event[i];
 	}
-	// move to the next positition
+	// move to the next position
 	evt_queue.head = next;
 
 	return true;

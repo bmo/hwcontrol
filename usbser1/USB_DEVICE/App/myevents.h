@@ -24,6 +24,10 @@
 #define PBTN_TCLK				0x04		///< triple click
 #define PBTN_DOWN				0x05		///< button state down
 #define PBTN_ENDN				0x06		///< button state changed to up
+
+#define EVT_ENCODER_UP			0x30
+#define	EVT_ENCODER_DOWN		0x31
+
 /** UART packet received
  *
  * Event Data: (UART PACKET)
@@ -36,8 +40,8 @@
 #define SYS_DSLMOD			0x03	///< enter deep sleep mode
 #define SYS_SLPMOD			0x04	///< enter sleep mode
 
-#define EVT_UART_RXPKT			0x20		///< event code for UART RX packet
-
+#define EVT_UART_RXPKT		0x20		///< event code for UART RX packet
+#define EVT_USB_DATA		0x40	///< event code for USB data received from host
 #endif // __MY_EVENTS_H
 
 

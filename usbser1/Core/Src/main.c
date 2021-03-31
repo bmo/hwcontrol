@@ -44,6 +44,11 @@
 
 /* USER CODE BEGIN PV */
 
+uint8_t reg_e = 0x01;
+uint8_t reg_r = 0x0a;
+uint8_t reg_c = 0x28;
+uint8_t reg_l = 0x64;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -56,7 +61,79 @@ static void MX_GPIO_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+uint8_t uint8_toupper(uint8_t c){
+	if (c >= 'a' && c <= 'z') {
+		c = c ^ 0x20;
+	}
+	return c;
+}
+void report_version() {
+	UartPrintf("F0304;");
+}
+void cmd_proc(uint8_t *buffer, uint16_t size) {
+  // handle commands
+  uint8_t *cp=buffer;
+  uint16_t i = size;
 
+  if (size == 0) return;
+
+  // uppercase everything
+  while(i--){
+	  *cp = uint8_toupper(*cp);
+	  cp++;
+  }
+
+  switch(uint8_toupper(buffer[0])) {
+  case 'F':
+    if (size != 2) return;
+    // enqueue F<version>;
+    report_version();
+    break;
+  case 'Z':
+    // handle Zr; ZrNN; where r is E,R,C,L, NN is a hex number
+    if (size < 3 || size > 5) return;  //
+
+    uint8_t is_get = (size == 3);
+
+    switch(buffer[1]) {
+
+    case 'E':
+			// enqueue 'ZE<hex>;'
+			if (is_get) {
+				UartPrintf("ZE%02X", reg_e);
+			}
+			break;
+
+		case 'R':
+			// enqueue 'ZR<hex>;
+			if (is_get) {
+				UartPrintf("ZR%02X", reg_e);
+			}
+			break;
+
+		case 'C':
+			// enqueue 'ZC<hex>;'
+			if (is_get) {
+				UartPrintf("ZC%02X", reg_e);
+			}
+			break;
+
+		case 'L':
+			// enqueue 'ZL<hex>;'
+			if (is_get) {
+				UartPrintf("ZL%02X", reg_e);
+			}
+			break;
+		}
+  break;
+
+  case 'I':
+    // Handle Innn; where n is 0,1 corresponding to each of the LEDs
+    break;
+  default:
+    break;
+  }
+}
 /* USER CODE END 0 */
 
 /**
@@ -68,7 +145,15 @@ int main(void)
   /* USER CODE BEGIN 1 */
 	int result;
 	uint8_t event[EVT_QWIDTH];
-	// uint8_t payload[MAX_PAYLOAD];
+	uint8_t usb_data[USB_BUFFER_SIZE];
+	uint8_t single_cmd[CMD_BUFFER_SIZE];
+	RingBufferU8 rb1;
+	uint8_t saw_terminator=0;
+	int len = 0;
+
+	//uint8_t usb_payload[MAX_PAYLOAD];
+
+	RingBufferU8_init(&rb1, usb_data, USB_BUFFER_SIZE);
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -90,15 +175,16 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USB_DEVICE_Init();
-    /* USER CODE BEGIN 2 */
+  /* USER CODE BEGIN 2 */
     result = 0;
 
 	// initialize the pushbutton handler with mask byte.
 	PushButton_Init(0x01);
+
 	// start a timer routine: 10msec period, perpetual
 	//result = UsrTimer_Set(10, 0, UartRxTask);
 	// UART output test
-	UartPrintf("\r\n\t\tSystem Started: %d\r\n", result);
+	report_version();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -110,32 +196,64 @@ int main(void)
 		// check event queue
 		if (Evt_DeQueue(event)) {
 			switch (event[0]) {
+
+			case EVT_ENCODER_UP:
+				// event[1]: encoder_id
+				// event[2]: encoder_delta
+				//UartPrintf("\r\nEncoder UP %d: delta %d", event[1], event[2]);
+				UartPrintf("U;");
+				break;
+
+			case EVT_ENCODER_DOWN:
+				// event[1]: encoder_id
+				// event[2]: encoder_delta
+				//UartPrintf("\r\nEncoder DOWN %d: delta %d", event[1], event[2]);
+				UartPrintf("D;");
+				break;
+
 			// pushbutton event ================================================
 			// event[1]: button id
 			// event[2]: PBTN_SCLK, _DCLK, _TCLK, _LCLK, _DOWN, _ENDN
+
 			case EVT_PBTN_INPUT:
 
 				if (event[2] == PBTN_SCLK) {
-					UartPrintf("\r\nButton %d: single click.", event[1]);
+					UartPrintf("X%1dS;", event[1]);
+					//UartPrintf("\r\nButton %d: single click.", event[1]);
 				} else if (event[2] == PBTN_LCLK) {
-					UartPrintf("\r\nButton %d: long click.", event[1]);
+					//UartPrintf("\r\nButton %d: long click.", event[1]);
+					UartPrintf("X%1dL;", event[1]);
 				} else if (event[2] == PBTN_DCLK) {
-					UartPrintf("\r\nButton %d: double click.", event[1]);
+					//UartPrintf("\r\nButton %d: double click.", event[1]);
+					UartPrintf("X%1dC;", event[1]);
 				} else if (event[2] == PBTN_TCLK) {
-					UartPrintf("\r\nButton %d: triple click.", event[1]);
+					//UartPrintf("\r\nButton %d: triple click.", event[1]);
 
-					PushButton_SetMode(PUSHBTN_MODE_UDOWN, true);
-					UartPrintf("\r\n --> Switch to up-down mode.");
+					//PushButton_SetMode(PUSHBTN_MODE_UDOWN, true);
+					//UartPrintf("\r\n --> Switch to up-down mode.");
 				} else if (event[2] == PBTN_DOWN) {
-					UartPrintf("\r\nButton %d: is being pressed.", event[1]);
+					//UartPrintf("\r\nButton %d: is being pressed.", event[1]);
 				} else if (event[2] == PBTN_ENDN) {
-					UartPrintf("\r\nButton %d: has been released.", event[1]);
-					PushButton_SetMode(PUSHBTN_MODE_CLICK, true);
-					UartPrintf("\r\n --> Switch to click mode.");
+					//UartPrintf("\r\nButton %d: has been released.", event[1]);
+					//PushButton_SetMode(PUSHBTN_MODE_CLICK, true);
+					//UartPrintf("\r\n --> Switch to click mode.");
 				}
 				break;
 
+			case EVT_USB_DATA:
+				// evt[1] = size
+				// evt[16]..[16+USB_MAX_PAYLOAD] is data
+				saw_terminator = RingBufferU8_write(&rb1, (const unsigned char *)&event[16], event[1], ';');
 
+				// handle the commands
+				if (saw_terminator) {
+					while ((len = RingBufferU8_readUntil(&rb1, single_cmd, CMD_BUFFER_SIZE, ';'))) {
+						single_cmd[len] = 0;
+						cmd_proc(single_cmd, len);
+						//UartPrintf("USB cmd: [%s]\n",single_cmd);
+					}
+				}
+				break;
 			default:
 				break;
 			}
@@ -217,11 +335,11 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : TEST_BTN_Pin */
-  GPIO_InitStruct.Pin = TEST_BTN_Pin;
+  /*Configure GPIO pins : TEST_BTN_Pin ENC_CLK_Pin ENC_DATA_Pin */
+  GPIO_InitStruct.Pin = TEST_BTN_Pin|ENC_CLK_Pin|ENC_DATA_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(TEST_BTN_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
 }
 
@@ -240,6 +358,12 @@ void UartPrintf(const char *format, ...)
 	va_end(args);
 	CDC_Transmit_FS((uint8_t*)buffer, size);
 	//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, size, 1000);
+}
+
+void Encoder_Init()
+{
+   // register pushbutton main routine
+   //	UsrTimer_Set(PUSHBTN_TMR_PERIOD, 0, PushButton_Routine);
 }
 
 /** This function returns the state (click/release) of the pushbuttons
@@ -262,13 +386,66 @@ uint8_t PushButton_Read()
 		return 0x01;
 	}
 }
+// test a KY-040 style rotary encoder module on a blue pill board
+// uncomment either LIBMAPLE_CORE or STM32DUINO_CORE
+//#define LIBMAPLE_CORE
+#define STM32DUINO_CORE
+// for STM32DUINO_CORE be sure to select a serial port in the tools menu
+
+// define encoder pins
+// clock and data are from the silkscreen on the encoder module
+#define ENC_CLK PB8
+#define ENC_DATA PB9
+
+// call this from the systick interrupt every millisecond
+// modified from the original code by dannyf
+// at https://github.com/dannyf00/My-MCU-Libraries---2nd-try/blob/master/encoder1.c
+int encoder1_read(void)
+{
+  volatile static uint8_t ABs = 0;
+  ABs = (ABs << 2) & 0x0f; //left 2 bits now contain the previous AB key read-out;
+  ABs |= (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_8) << 1) | HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_9);
+  switch (ABs)
+  {
+    case 0x0d:
+      return +1;
+      break;
+    case 0x0e:
+      return -1;
+      break;
+  }
+  return 0;
+}
 
 /** SysTick callback function override.
  */
 void SysTick_Handler_1ms()
 {
+	int delta = 0;
+	uint8_t event[EVT_QWIDTH];
 	// UsrTimer_Routine will have 1msec resolution
 	UsrTimer_Routine();
+	delta = encoder1_read();
+
+	if (delta == -1)
+	{
+		event[0] = EVT_ENCODER_DOWN;
+		event[1] = (uint8_t) (1);
+		event[2] = 1;
+
+		// post the event to indicate the end of the down state
+		Evt_EnQueue(event);
+	}
+
+	if (delta == 1) {
+		event[0] = EVT_ENCODER_UP;
+		event[1] = (uint8_t) (1);
+		event[2] = 1;
+
+		// post the event to indicate the end of the down state
+		Evt_EnQueue(event);
+	}
+
 }
 
 void SysTick_Handler_5ms()

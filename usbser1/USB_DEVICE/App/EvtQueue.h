@@ -69,6 +69,7 @@ if(flag)
 #include <stdint.h>
 #include "myevents.h"
 
+
 /** Maximum number of events the queue can hold.  This number should be less
  * than 256.
  */
@@ -76,7 +77,8 @@ if(flag)
 /** The maximum size of the event data. It consists of one byte of event code
  * with variable length of data bytes.
  */
-#define EVT_QWIDTH				(16)
+#define MAX_USB_PAYLOAD			(64)			// TODO put this in a different .h
+#define EVT_QWIDTH				(16+MAX_USB_PAYLOAD)
 
 
 /// Register a new event

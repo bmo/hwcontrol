@@ -262,6 +262,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
   /* USER CODE BEGIN 6 */
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
   USBD_CDC_ReceivePacket(&hUsbDeviceFS);
+/*
   uint16_t my_len;
   uint16_t orig_len = *Len;
   my_len = *Len;
@@ -272,6 +273,25 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 	  chr++;
   }
   CDC_Transmit_FS(Buf, orig_len); // Echo
+*/
+  uint16_t my_len;
+  uint16_t orig_len = *Len;
+
+  uint8_t event[EVT_QWIDTH];
+
+  event[0] = EVT_USB_DATA;
+  event[1] = *Len & 0xff;
+
+  uint8_t* sptr = Buf;
+  uint8_t* dptr = &event[16];
+  if (orig_len > 64)
+	  orig_len = 64; // shouldn't get more than 64 bytes. Just in case.
+
+  while(orig_len--){
+	  *dptr++ = *sptr++;
+  }
+  Evt_EnQueue(event);
+
   return (USBD_OK);
   /* USER CODE END 6 */
 }

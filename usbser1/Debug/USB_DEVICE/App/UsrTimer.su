@@ -1,7 +1,0 @@
-UsrTimer.c:33:6:UsrTimer_Init	16	static
-UsrTimer.c:46:6:UsrTimer_Enable	16	static
-UsrTimer.c:66:5:UsrTimer_Set	32	static
-UsrTimer.c:104:6:UsrTimer_Clear	16	static
-UsrTimer.c:123:6:UsrTimer_Pause	16	static
-UsrTimer.c:138:6:UsrTimer_Resume	16	static
-UsrTimer.c:166:6:UsrTimer_Routine	16	static

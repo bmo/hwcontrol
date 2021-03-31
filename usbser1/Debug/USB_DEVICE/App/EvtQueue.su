@@ -1,3 +1,0 @@
-EvtQueue.c:31:6:Evt_EnQueue	24	static
-EvtQueue.c:64:6:Evt_DeQueue	32	static
-EvtQueue.c:97:6:Evt_InitQueue	4	static

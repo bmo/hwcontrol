@@ -107,21 +107,21 @@ void cmd_proc(uint8_t *buffer, uint16_t size) {
 		case 'R':
 			// enqueue 'ZR<hex>;
 			if (is_get) {
-				UartPrintf("ZR%02X", reg_e);
+				UartPrintf("ZR%02X;", reg_e);
 			}
 			break;
 
 		case 'C':
 			// enqueue 'ZC<hex>;'
 			if (is_get) {
-				UartPrintf("ZC%02X", reg_e);
+				UartPrintf("ZC%02X;", reg_e);
 			}
 			break;
 
 		case 'L':
 			// enqueue 'ZL<hex>;'
 			if (is_get) {
-				UartPrintf("ZL%02X", reg_e);
+				UartPrintf("ZL%02X;", reg_e);
 			}
 			break;
 		}

@@ -34,6 +34,8 @@ extern "C" {
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
 #include <stdarg.h>
+#include <inttypes.h>
+#include <ctype.h>
 #include "UsrTimer.h"
 #include "EvtQueue.h"
 #include "PushButton.h"
@@ -81,10 +83,10 @@ void UartPrintf(const char *format, ...);
 #define TEST_LED_GPIO_Port GPIOB
 #define TEST_BTN_Pin GPIO_PIN_1
 #define TEST_BTN_GPIO_Port GPIOB
-#define UART_TX_Pin GPIO_PIN_9
-#define UART_TX_GPIO_Port GPIOA
-#define UART_RX_Pin GPIO_PIN_10
-#define UART_RX_GPIO_Port GPIOA
+//#define UART_TX_Pin GPIO_PIN_9
+//#define UART_TX_GPIO_Port GPIOA
+//#define UART_RX_Pin GPIO_PIN_10
+//#define UART_RX_GPIO_Port GPIOA
 
 /* USER CODE END Private defines */
 

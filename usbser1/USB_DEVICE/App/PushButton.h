@@ -78,11 +78,11 @@ main()
 #include <stdbool.h>
 
 /// PushButton_Routine timer period in msec
-#define PUSHBTN_TMR_PERIOD		80
+#define PUSHBTN_TMR_PERIOD		5  // 80
 /// Criteria for determination of short click and long click
-#define PUSHBTN_TO_SHORT		3		// 3 * PUSHBTN_TMR_PERIOD
-#define PUSHBTN_TO_LONG			10		// 10 * PUSHBTN_TMR_PERIOD
-#define PUSHBTN_TO_MAX			255		// maximum duration count
+#define PUSHBTN_TO_SHORT		0x14 	// 3 * PUSHBTN_TMR_PERIOD
+#define PUSHBTN_TO_LONG			0x64	// 10 * PUSHBTN_TMR_PERIOD
+#define PUSHBTN_TO_MAX			4080	// (16 * 255) maximum duration count
 
 #define PUSHBTN_MODE_CLICK		0x00	// click mode: detect change
 #define PUSHBTN_MODE_UDOWN		0x01	// up down mode: detect level

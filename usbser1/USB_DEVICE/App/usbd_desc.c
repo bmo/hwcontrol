@@ -62,7 +62,7 @@
   * @brief Private defines.
   * @{
   */
-#define STM_DEFAULTS
+//#define STM_DEFAULTS
 #ifdef STM_DEFAULTS
 #define USBD_VID     1155
 #define USBD_LANGID_STRING     1033

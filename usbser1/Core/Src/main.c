@@ -70,69 +70,90 @@ uint8_t uint8_toupper(uint8_t c){
 void report_version() {
 	UartPrintf("F0304;");
 }
+
+
+void set_reg_val(uint8_t *reg, uint8_t *str){
+	unsigned int value;
+	if (isxdigit(*str) && isxdigit(*(str + 1)))
+	{
+		sscanf((char *)str, "%02X", &value);
+		*reg = (uint8_t) (value & 0xff);
+	}
+}
+
 void cmd_proc(uint8_t *buffer, uint16_t size) {
-  // handle commands
-  uint8_t *cp=buffer;
-  uint16_t i = size;
+	// handle commands
+	uint8_t *cp = buffer;
+	uint16_t i = size;
 
-  if (size == 0) return;
+	if (size == 0)
+		return;
 
-  // uppercase everything
-  while(i--){
-	  *cp = uint8_toupper(*cp);
-	  cp++;
-  }
+	// uppercase everything
+	while (i--) {
+		*cp = uint8_toupper(*cp);
+		cp++;
+	}
 
-  switch(uint8_toupper(buffer[0])) {
-  case 'F':
-    if (size != 2) return;
-    // enqueue F<version>;
-    report_version();
-    break;
-  case 'Z':
-    // handle Zr; ZrNN; where r is E,R,C,L, NN is a hex number
-    if (size < 3 || size > 5) return;  //
+	switch (buffer[0]) {
+	case 'F':
+		if (size != 2)
+			return;
+		// enqueue F<version>;
+		report_version();
+		break;
+	case 'Z':
+		// handle Zr; ZrNN; where r is E,R,C,L, NN is a hex number
+		if (size < 3 || size > 5)
+			return;  //
 
-    uint8_t is_get = (size == 3);
+		uint8_t is_set = (size == 5);
 
-    switch(buffer[1]) {
+		switch (buffer[1]) {
 
-    case 'E':
+		case 'E':
 			// enqueue 'ZE<hex>;'
-			if (is_get) {
-				UartPrintf("ZE%02X", reg_e);
+			if (is_set) {
+				set_reg_val((uint8_t*) &reg_e, &buffer[2]);
 			}
+			UartPrintf("ZE%02X;", reg_e);
+
 			break;
 
 		case 'R':
 			// enqueue 'ZR<hex>;
-			if (is_get) {
-				UartPrintf("ZR%02X;", reg_e);
+			if (is_set) {
+				set_reg_val((uint8_t*) &reg_r, &buffer[2]);
 			}
+			UartPrintf("ZR%02X;", reg_r);
 			break;
 
 		case 'C':
 			// enqueue 'ZC<hex>;'
-			if (is_get) {
-				UartPrintf("ZC%02X;", reg_e);
+			if (is_set) {
+				set_reg_val((uint8_t*) &reg_c, &buffer[2]);
 			}
+			UartPrintf("ZC%02X;", reg_c);
 			break;
 
 		case 'L':
 			// enqueue 'ZL<hex>;'
-			if (is_get) {
-				UartPrintf("ZL%02X;", reg_e);
+			if (is_set) {
+				set_reg_val((uint8_t*) &reg_l, &buffer[2]);
 			}
+
+			UartPrintf("ZL%02X;", reg_l);
+
 			break;
 		}
-  break;
+		break;
 
-  case 'I':
-    // Handle Innn; where n is 0,1 corresponding to each of the LEDs
-    break;
-  default:
-    break;
-  }
+	case 'I':
+		// Handle Innn; where n is 0,1 corresponding to each of the LEDs
+		break;
+	default:
+		break;
+	}
 }
 /* USER CODE END 0 */
 
@@ -143,7 +164,6 @@ void cmd_proc(uint8_t *buffer, uint16_t size) {
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	int result;
 	uint8_t event[EVT_QWIDTH];
 	uint8_t usb_data[USB_BUFFER_SIZE];
 	uint8_t single_cmd[CMD_BUFFER_SIZE];
@@ -176,7 +196,6 @@ int main(void)
   MX_GPIO_Init();
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
-    result = 0;
 
 	// initialize the pushbutton handler with mask byte.
 	PushButton_Init(0x01);
@@ -201,14 +220,22 @@ int main(void)
 				// event[1]: encoder_id
 				// event[2]: encoder_delta
 				//UartPrintf("\r\nEncoder UP %d: delta %d", event[1], event[2]);
-				UartPrintf("U;");
+				if (event[2] == 1) {
+					UartPrintf("U;");
+				} else {
+					UartPrintf("U%02X;", event[2]);
+				}
 				break;
 
 			case EVT_ENCODER_DOWN:
 				// event[1]: encoder_id
 				// event[2]: encoder_delta
 				//UartPrintf("\r\nEncoder DOWN %d: delta %d", event[1], event[2]);
-				UartPrintf("D;");
+				if (event[2] == 1) {
+					UartPrintf("D;");
+				} else {
+					UartPrintf("D%02X;",event[2]);
+				}
 				break;
 
 			// pushbutton event ================================================
@@ -217,18 +244,26 @@ int main(void)
 
 			case EVT_PBTN_INPUT:
 
-				if (event[2] == PBTN_SCLK) {
-					UartPrintf("X%1dS;", event[1]);
-					//UartPrintf("\r\nButton %d: single click.", event[1]);
-				} else if (event[2] == PBTN_LCLK) {
-					//UartPrintf("\r\nButton %d: long click.", event[1]);
-					UartPrintf("X%1dL;", event[1]);
-				} else if (event[2] == PBTN_DCLK) {
-					//UartPrintf("\r\nButton %d: double click.", event[1]);
-					UartPrintf("X%1dC;", event[1]);
+				if (event[2] == PBTN_SCLK) { // single click event
+					if (event[1] == 0) {
+						UartPrintf("S;", event[1]);
+					} else {
+						UartPrintf("X%1dS;", event[1]);
+					}
+				} else if (event[2] == PBTN_LCLK) { // long click event
+					if (event[1] == 0) {
+						UartPrintf("L;", event[1]);
+					} else {
+						UartPrintf("X%1dL;", event[1]);
+					}
+				} else if (event[2] == PBTN_DCLK) { // double click
+					if (event[1] == 0) {
+						UartPrintf("C;", event[1]);
+					} else {
+						UartPrintf("X%1dC;", event[1]);
+					}
 				} else if (event[2] == PBTN_TCLK) {
 					//UartPrintf("\r\nButton %d: triple click.", event[1]);
-
 					//PushButton_SetMode(PUSHBTN_MODE_UDOWN, true);
 					//UartPrintf("\r\n --> Switch to up-down mode.");
 				} else if (event[2] == PBTN_DOWN) {
@@ -389,7 +424,7 @@ uint8_t PushButton_Read()
 // test a KY-040 style rotary encoder module on a blue pill board
 // uncomment either LIBMAPLE_CORE or STM32DUINO_CORE
 //#define LIBMAPLE_CORE
-#define STM32DUINO_CORE
+//#define STM32DUINO_CORE
 // for STM32DUINO_CORE be sure to select a serial port in the tools menu
 
 // define encoder pins
@@ -416,22 +451,75 @@ int encoder1_read(void)
   }
   return 0;
 }
+// generic encoder read with two pins
+int encoder_read(GPIO_TypeDef *clk_bank, uint16_t clk_pin, GPIO_TypeDef *data_bank, uint16_t data_pin)
+{
+  volatile static uint8_t ABs = 0;
+  ABs = (ABs << 2) & 0x0f; //left 2 bits now contain the previous AB key read-out;
+  ABs |= (HAL_GPIO_ReadPin(clk_bank, clk_pin) << 1) | HAL_GPIO_ReadPin(data_bank, data_pin);
+  switch (ABs)
+  {
+    case 0x0d:
+      return +1;
+      break;
+    case 0x0e:
+      return -1;
+      break;
+  }
+  return 0;
+}
+void encoder1_routine_1ms() {
+	static int duration = 0;
+	static int encoder_1_value = 0;
+	uint8_t event[EVT_QWIDTH];
 
+	// increment duration
+	duration--;
+	// read encoder values
+	encoder_1_value += encoder1_read();
+
+	if (duration < 0) {
+		if (encoder_1_value < 0) {
+			event[0] = EVT_ENCODER_DOWN;
+			event[2] = (uint8_t) (-encoder_1_value);
+			event[1] = 1;
+
+			// post the event to indicate the end of the down state
+			Evt_EnQueue(event);
+		}
+
+		if (encoder_1_value > 0) {
+			event[0] = EVT_ENCODER_UP;
+			event[2] = (uint8_t) (encoder_1_value);
+			event[1] = 1;
+
+			// post the event to indicate the end of the down state
+			Evt_EnQueue(event);
+		}
+		duration = reg_r;
+		encoder_1_value = 0;
+	}
+
+}
 /** SysTick callback function override.
  */
 void SysTick_Handler_1ms()
 {
 	int delta = 0;
+	int duration = 0;
+	int encoder_1_value = 0;
 	uint8_t event[EVT_QWIDTH];
 	// UsrTimer_Routine will have 1msec resolution
+	encoder1_routine_1ms();
 	UsrTimer_Routine();
+	return;
 	delta = encoder1_read();
 
 	if (delta == -1)
 	{
 		event[0] = EVT_ENCODER_DOWN;
-		event[1] = (uint8_t) (1);
-		event[2] = 1;
+		event[2] = (uint8_t) (1);
+		event[1] = 1;
 
 		// post the event to indicate the end of the down state
 		Evt_EnQueue(event);
@@ -439,8 +527,8 @@ void SysTick_Handler_1ms()
 
 	if (delta == 1) {
 		event[0] = EVT_ENCODER_UP;
-		event[1] = (uint8_t) (1);
-		event[2] = 1;
+		event[2] = (uint8_t) (1);
+		event[1] = 1;
 
 		// post the event to indicate the end of the down state
 		Evt_EnQueue(event);
@@ -456,6 +544,7 @@ void SysTick_Handler_5ms()
 		counter_5ms = 0;
 		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
 	}
+
 }
 /* USER CODE END 4 */
 

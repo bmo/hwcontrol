@@ -13,7 +13,7 @@ typedef struct
 	uint8_t old_state;		///< button state old
 	uint8_t new_state;		///< button state new
 	uint8_t click[8];		///< number of button click
-	uint8_t duration[8];	///< time passed since last click
+	uint16_t duration[8];	///< time passed since last click
 	uint8_t mask;			///< mask for buttons to be ignored
 	uint8_t mode;			///< click mode / updown mode
 	bool flag;				///< internal flag to prevent false detection

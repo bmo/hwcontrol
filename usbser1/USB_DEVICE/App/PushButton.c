@@ -96,6 +96,8 @@ void PushButton_Routine()
 	uint8_t diff_state;
 	uint8_t event[EVT_QWIDTH];
 
+	extern uint8_t reg_s;
+
 	pp.new_state = PushButton_Read();
 
 	// difference in the button state

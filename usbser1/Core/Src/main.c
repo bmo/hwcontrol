@@ -468,15 +468,32 @@ int encoder_read(GPIO_TypeDef *clk_bank, uint16_t clk_pin, GPIO_TypeDef *data_ba
   }
   return 0;
 }
+
+#define MAX_ENCODER_INTERVAL 100
+#define MAX_ENCODER_DIVIDER 25
+
 void encoder1_routine_1ms() {
+	static unsigned int msecs_since_last;
 	static int duration = 0;
 	static int encoder_1_value = 0;
+	static int delta = 0;
+
+	uint8_t mult = 0;
+
 	uint8_t event[EVT_QWIDTH];
 
 	// increment duration
 	duration--;
+
+	msecs_since_last++;
+	if (msecs_since_last > MAX_ENCODER_INTERVAL) msecs_since_last = MAX_ENCODER_INTERVAL;
+	mult = msecs_since_last >= MAX_ENCODER_INTERVAL ? 1 : (uint8_t)((MAX_ENCODER_INTERVAL - msecs_since_last)/ MAX_ENCODER_DIVIDER)+1;
+
 	// read encoder values
-	encoder_1_value += encoder1_read();
+	delta = encoder1_read();
+	if (delta) msecs_since_last = 0;
+	encoder_1_value += delta * mult;
+
 
 	if (duration < 0) {
 		if (encoder_1_value < 0) {

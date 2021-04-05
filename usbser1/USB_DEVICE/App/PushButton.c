@@ -118,7 +118,7 @@ void PushButton_Routine()
 			if(((pp.new_state >> i) & 0x01) == 0x01)
 			{
 				event[0] = EVT_PBTN_INPUT;
-				event[1] = (uint8_t)(i+1);
+				event[1] = (uint8_t)(i);
 				event[2] = PBTN_DOWN;
 
 				// post the event as long as the button is pressed down
@@ -131,7 +131,7 @@ void PushButton_Routine()
 				if(((pp.old_state >> i) & 0x01) == 0x01)
 				{
 					event[0] = EVT_PBTN_INPUT;
-					event[1] = (uint8_t)(i+1);
+					event[1] = (uint8_t)(i);
 					event[2] = PBTN_ENDN;
 
 					// post the event to indicate the end of the down state
@@ -180,7 +180,7 @@ void PushButton_Routine()
 			{
 				// triple click event
 				event[0] = EVT_PBTN_INPUT;
-				event[1] = (uint8_t)(i+1);
+				event[1] = (uint8_t)(i);
 				event[2] = PBTN_TCLK;
 				// post event
 				Evt_EnQueue(event);
@@ -193,7 +193,7 @@ void PushButton_Routine()
 					(((pp.new_state >> i) & 0x01) == 0x00))
 			{
 				event[0] = EVT_PBTN_INPUT;
-				event[1] = (uint8_t)(i+1);
+				event[1] = (uint8_t)(i);
 
 				// double click
 				if(pp.click[i] == 2)
@@ -219,7 +219,7 @@ void PushButton_Routine()
 			{
 				// long click event
 				event[0] = EVT_PBTN_INPUT;
-				event[1] = (uint8_t)(i+1);
+				event[1] = (uint8_t)(i);
 				event[2] = PBTN_LCLK;
 
 				// post the event

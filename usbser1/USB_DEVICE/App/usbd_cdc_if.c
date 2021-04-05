@@ -274,8 +274,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
   }
   CDC_Transmit_FS(Buf, orig_len); // Echo
 */
-  uint16_t my_len;
-  uint16_t orig_len = *Len;
+  int16_t orig_len = *Len;
 
   uint8_t event[EVT_QWIDTH];
 

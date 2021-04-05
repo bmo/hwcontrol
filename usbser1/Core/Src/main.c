@@ -150,6 +150,26 @@ void cmd_proc(uint8_t *buffer, uint16_t size) {
 
 	case 'I':
 		// Handle Innn; where n is 0,1 corresponding to each of the LEDs
+		if (size != 5)
+			return;
+		if (buffer[1] == '1') {
+			HAL_GPIO_WritePin( LED0_GPIO_Port, LED0_Pin, GPIO_PIN_RESET);
+		}
+		if (buffer[2] == '1') {
+			HAL_GPIO_WritePin( LED1_GPIO_Port, LED1_Pin, GPIO_PIN_RESET);
+		}
+		if (buffer[3] == '1') {
+			HAL_GPIO_WritePin( LED2_GPIO_Port, LED2_Pin, GPIO_PIN_RESET);
+		}
+		if (buffer[1] == '0') {
+			HAL_GPIO_WritePin( LED0_GPIO_Port, LED0_Pin, GPIO_PIN_SET);
+		}
+		if (buffer[2] == '0') {
+			HAL_GPIO_WritePin( LED1_GPIO_Port, LED1_Pin, GPIO_PIN_SET);
+		}
+		if (buffer[3] == '0') {
+			HAL_GPIO_WritePin( LED2_GPIO_Port, LED2_Pin, GPIO_PIN_SET);
+		}
 		break;
 	default:
 		break;
@@ -198,7 +218,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
 	// initialize the pushbutton handler with mask byte.
-	PushButton_Init(0x01);
+	PushButton_Init(0x0F);
 
 	// start a timer routine: 10msec period, perpetual
 	//result = UsrTimer_Set(10, 0, UartRxTask);
@@ -243,22 +263,22 @@ int main(void)
 			// event[2]: PBTN_SCLK, _DCLK, _TCLK, _LCLK, _DOWN, _ENDN
 
 			case EVT_PBTN_INPUT:
-
+				//UartPrintf("\r\nButton id %d, event %d\r\n", event[1], event[2]);
 				if (event[2] == PBTN_SCLK) { // single click event
 					if (event[1] == 0) {
-						UartPrintf("S;", event[1]);
+						UartPrintf("S;");
 					} else {
 						UartPrintf("X%1dS;", event[1]);
 					}
 				} else if (event[2] == PBTN_LCLK) { // long click event
 					if (event[1] == 0) {
-						UartPrintf("L;", event[1]);
+						UartPrintf("L;");
 					} else {
 						UartPrintf("X%1dL;", event[1]);
 					}
 				} else if (event[2] == PBTN_DCLK) { // double click
 					if (event[1] == 0) {
-						UartPrintf("C;", event[1]);
+						UartPrintf("C;");
 					} else {
 						UartPrintf("X%1dC;", event[1]);
 					}
@@ -361,17 +381,33 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOA_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(Blinker_GPIO_Port, Blinker_Pin, GPIO_PIN_SET);
 
-  /*Configure GPIO pin : PC13 */
-  GPIO_InitStruct.Pin = GPIO_PIN_13;
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, LED0_Pin|LED1_Pin|LED2_Pin, GPIO_PIN_SET);
+
+  /*Configure GPIO pin : Blinker_Pin */
+  GPIO_InitStruct.Pin = Blinker_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+  HAL_GPIO_Init(Blinker_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : TEST_BTN_Pin ENC_CLK_Pin ENC_DATA_Pin */
-  GPIO_InitStruct.Pin = TEST_BTN_Pin|ENC_CLK_Pin|ENC_DATA_Pin;
+  /*Configure GPIO pins : EncoderButton_Pin Button1_Pin Button2_Pin Button3_Pin */
+  GPIO_InitStruct.Pin = EncoderButton_Pin|Button1_Pin|Button2_Pin|Button3_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : LED0_Pin LED1_Pin LED2_Pin */
+  GPIO_InitStruct.Pin = LED0_Pin|LED1_Pin|LED2_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : ENC_CLK_Pin ENC_DATA_Pin */
+  GPIO_InitStruct.Pin = ENC_CLK_Pin|ENC_DATA_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
@@ -410,16 +446,26 @@ void Encoder_Init()
  */
 uint8_t PushButton_Read()
 {
-	// button released
-	if(HAL_GPIO_ReadPin(TEST_BTN_GPIO_Port, TEST_BTN_Pin))
+	uint8_t buttons = 0;
+	// button pushed
+	if (!HAL_GPIO_ReadPin(EncoderButton_GPIO_Port, EncoderButton_Pin))
 	{
-		return 0x00;
+		buttons |= 1;
 	}
-	// button pressed
-	else
-	{
-		return 0x01;
+	if (!HAL_GPIO_ReadPin(Button1_GPIO_Port, Button1_Pin)) {
+		buttons |= 2;
 	}
+	if (!HAL_GPIO_ReadPin(Button2_GPIO_Port, Button2_Pin)) {
+		buttons |= 4;
+	}
+	if (!HAL_GPIO_ReadPin(Button3_GPIO_Port, Button3_Pin)) {
+		buttons |= 8;
+	}
+	//if (buttons) {
+	//	UartPrintf("Buttons! %02x",buttons);
+	//}
+
+	return buttons;
 }
 // test a KY-040 style rotary encoder module on a blue pill board
 // uncomment either LIBMAPLE_CORE or STM32DUINO_CORE
@@ -522,35 +568,10 @@ void encoder1_routine_1ms() {
  */
 void SysTick_Handler_1ms()
 {
-	int delta = 0;
-	int duration = 0;
-	int encoder_1_value = 0;
-	uint8_t event[EVT_QWIDTH];
 	// UsrTimer_Routine will have 1msec resolution
 	encoder1_routine_1ms();
 	UsrTimer_Routine();
 	return;
-	delta = encoder1_read();
-
-	if (delta == -1)
-	{
-		event[0] = EVT_ENCODER_DOWN;
-		event[2] = (uint8_t) (1);
-		event[1] = 1;
-
-		// post the event to indicate the end of the down state
-		Evt_EnQueue(event);
-	}
-
-	if (delta == 1) {
-		event[0] = EVT_ENCODER_UP;
-		event[2] = (uint8_t) (1);
-		event[1] = 1;
-
-		// post the event to indicate the end of the down state
-		Evt_EnQueue(event);
-	}
-
 }
 
 void SysTick_Handler_5ms()
@@ -559,7 +580,7 @@ void SysTick_Handler_5ms()
 	static int counter_5ms = 0;
 	if (counter_5ms++ > 200) {
 		counter_5ms = 0;
-		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+		HAL_GPIO_TogglePin(Blinker_GPIO_Port, Blinker_Pin);
 	}
 
 }

@@ -67,22 +67,34 @@ void UartPrintf(const char *format, ...);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define TEST_BTN_Pin GPIO_PIN_1
-#define TEST_BTN_GPIO_Port GPIOB
+#define Blinker_Pin GPIO_PIN_13
+#define Blinker_GPIO_Port GPIOC
+#define EncoderButton_Pin GPIO_PIN_1
+#define EncoderButton_GPIO_Port GPIOB
+#define Button1_Pin GPIO_PIN_13
+#define Button1_GPIO_Port GPIOB
+#define Button2_Pin GPIO_PIN_14
+#define Button2_GPIO_Port GPIOB
+#define Button3_Pin GPIO_PIN_15
+#define Button3_GPIO_Port GPIOB
+#define LED0_Pin GPIO_PIN_3
+#define LED0_GPIO_Port GPIOB
+#define LED1_Pin GPIO_PIN_4
+#define LED1_GPIO_Port GPIOB
+#define LED2_Pin GPIO_PIN_5
+#define LED2_GPIO_Port GPIOB
 #define ENC_CLK_Pin GPIO_PIN_8
 #define ENC_CLK_GPIO_Port GPIOB
 #define ENC_DATA_Pin GPIO_PIN_9
 #define ENC_DATA_GPIO_Port GPIOB
-
-#define CMD_BUFFER_SIZE 1024
-
-#define USB_BUFFER_SIZE 1024
-
 /* USER CODE BEGIN Private defines */
 #define TEST_LED_Pin GPIO_PIN_0
 #define TEST_LED_GPIO_Port GPIOB
 #define TEST_BTN_Pin GPIO_PIN_1
 #define TEST_BTN_GPIO_Port GPIOB
+
+#define CMD_BUFFER_SIZE 1024
+#define USB_BUFFER_SIZE 1024
 //#define UART_TX_Pin GPIO_PIN_9
 //#define UART_TX_GPIO_Port GPIOA
 //#define UART_RX_Pin GPIO_PIN_10

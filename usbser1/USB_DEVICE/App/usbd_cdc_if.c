@@ -321,7 +321,47 @@ uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len)
 }
 
 /* USER CODE BEGIN PRIVATE_FUNCTIONS_IMPLEMENTATION */
+USBD_StatusTypeDef USBD_CtlSendNotification(USBD_HandleTypeDef *pdev,
+                                    uint8_t *pbuf, uint16_t len)
+{
+  /* Set EP0 State */
+  //pdev->ep0_state = USBD_EP0_STATUS_IN ;
+  pdev->ep_in[2].total_length = len;
+  pdev->ep_in[2].rem_length   = len;
 
+  /* Start the transfer */
+  USBD_LL_Transmit(pdev, CDC_CMD_EP, pbuf, len);
+
+  return USBD_OK;
+}
+uint8_t CDC_Notify_FS(uint8_t linestate) {
+	USBD_HandleTypeDef *pdev = &hUsbDeviceFS;
+	uint8_t result = USBD_OK;
+
+	USBD_CDC_HandleTypeDef *hcdc =
+			(USBD_CDC_HandleTypeDef*) hUsbDeviceFS.pClassData;
+	uint8_t ifalt = 0U;
+	uint16_t status_info = 0U;
+	uint8_t ret = USBD_OK;
+	uint8_t dbuf[12];
+	dbuf[0] = 0xA1; //bmRequestType
+	dbuf[1] = 0x20; //SERIAL_STATE
+
+	dbuf[2] = 0x00; // wValue
+	dbuf[3] = 0x00;
+
+	dbuf[4] = 0x00; // windex (interface)
+	dbuf[5] = 0x00;
+
+	dbuf[6] = 0x02; // wlen
+	dbuf[7] = 0x00;
+
+	dbuf[8] = linestate & 0x7F; // linestate 7:0
+	dbuf[9] = 0x00; // reserved 15:8
+
+	USBD_CtlSendNotification(pdev, (uint8_t*) (void*) &dbuf, 0x0A);
+	return ret;
+}
 /* USER CODE END PRIVATE_FUNCTIONS_IMPLEMENTATION */
 
 /**

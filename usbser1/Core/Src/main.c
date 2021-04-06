@@ -270,12 +270,14 @@ int main(void)
 					} else {
 						UartPrintf("X%1dS;", event[1]);
 					}
+					CDC_Notify_FS(0x00);
 				} else if (event[2] == PBTN_LCLK) { // long click event
 					if (event[1] == 0) {
 						UartPrintf("L;");
 					} else {
 						UartPrintf("X%1dL;", event[1]);
 					}
+					 CDC_Notify_FS(0x02);
 				} else if (event[2] == PBTN_DCLK) { // double click
 					if (event[1] == 0) {
 						UartPrintf("C;");

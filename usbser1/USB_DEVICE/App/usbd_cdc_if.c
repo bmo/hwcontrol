@@ -344,13 +344,14 @@ uint8_t CDC_Notify_FS(uint8_t linestate) {
 	uint16_t status_info = 0U;
 	uint8_t ret = USBD_OK;
 	uint8_t dbuf[12];
-	dbuf[0] = 0xA1; //bmRequestType
+	dbuf[0] = 0xA1; //bmRequestType TODO: Add Define for USB_SERIAL_STATE
 	dbuf[1] = 0x20; //SERIAL_STATE
 
 	dbuf[2] = 0x00; // wValue
 	dbuf[3] = 0x00;
 
-	dbuf[4] = 0x00; // windex (interface)
+
+	dbuf[4] = 0x00; // windex (interface) TODO: pdev->dev_address ?
 	dbuf[5] = 0x00;
 
 	dbuf[6] = 0x02; // wlen

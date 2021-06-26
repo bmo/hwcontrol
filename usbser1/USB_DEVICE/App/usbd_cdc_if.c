@@ -334,9 +334,9 @@ USBD_StatusTypeDef USBD_CtlSendNotification(USBD_HandleTypeDef *pdev,
 
   return USBD_OK;
 }
+
 uint8_t CDC_Notify_FS(uint8_t linestate) {
 	USBD_HandleTypeDef *pdev = &hUsbDeviceFS;
-	uint8_t result = USBD_OK;
 
 	USBD_CDC_HandleTypeDef *hcdc =
 			(USBD_CDC_HandleTypeDef*) hUsbDeviceFS.pClassData;

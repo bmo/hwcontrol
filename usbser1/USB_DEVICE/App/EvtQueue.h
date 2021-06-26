@@ -73,7 +73,7 @@ if(flag)
 /** Maximum number of events the queue can hold.  This number should be less
  * than 256.
  */
-#define EVT_QDEPTH				(8)
+#define EVT_QDEPTH				(100)
 /** The maximum size of the event data. It consists of one byte of event code
  * with variable length of data bytes.
  */

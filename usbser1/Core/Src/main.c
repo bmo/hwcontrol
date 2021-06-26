@@ -49,11 +49,13 @@ uint8_t reg_r = 0x0a;
 uint8_t reg_c = 0x28;
 uint8_t reg_l = 0x64;
 
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+void encoder1_routine_1ms(void);
 /* USER CODE BEGIN PFP */
 //void UartRxTask(void);
 //void UartPrintf(const char *format, ...);
@@ -80,11 +82,18 @@ void set_reg_val(uint8_t *reg, uint8_t *str){
 		*reg = (uint8_t) (value & 0xff);
 	}
 }
+uint8_t read_config(uint32_t offset){
+	uint8_t val = 0;
+	offset= offset + 0x0800FC00;
+	val = *(__IO uint8_t*) offset;
+	return val;
+}
 
 void cmd_proc(uint8_t *buffer, uint16_t size) {
 	// handle commands
 	uint8_t *cp = buffer;
 	uint16_t i = size;
+	uint16_t j = 0;
 
 	if (size == 0)
 		return;
@@ -171,6 +180,15 @@ void cmd_proc(uint8_t *buffer, uint16_t size) {
 			HAL_GPIO_WritePin( LED2_GPIO_Port, LED2_Pin, GPIO_PIN_SET);
 		}
 		break;
+
+	case 'C':
+
+		for(j=0; j<256;j++) {
+			UartPrintf("%02X;", read_config(j));
+		}
+		UartPrintf("\n");
+		break;
+
 	default:
 		break;
 	}
@@ -221,9 +239,10 @@ int main(void)
 	PushButton_Init(0x0F);
 
 	// start a timer routine: 10msec period, perpetual
-	//result = UsrTimer_Set(10, 0, UartRxTask);
-	// UART output test
+	// esult = UsrTimer_Set(10, 0, UartRxTask);
+
 	report_version();
+	UsrTimer_Set(1,0,encoder1_routine_1ms);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -239,7 +258,6 @@ int main(void)
 			case EVT_ENCODER_UP:
 				// event[1]: encoder_id
 				// event[2]: encoder_delta
-				//UartPrintf("\r\nEncoder UP %d: delta %d", event[1], event[2]);
 				if (event[2] == 1) {
 					UartPrintf("U;");
 				} else {
@@ -250,7 +268,6 @@ int main(void)
 			case EVT_ENCODER_DOWN:
 				// event[1]: encoder_id
 				// event[2]: encoder_delta
-				//UartPrintf("\r\nEncoder DOWN %d: delta %d", event[1], event[2]);
 				if (event[2] == 1) {
 					UartPrintf("D;");
 				} else {
@@ -290,14 +307,11 @@ int main(void)
 					}
 				} else if (event[2] == PBTN_TCLK) {
 					//UartPrintf("\r\nButton %d: triple click.", event[1]);
-					//PushButton_SetMode(PUSHBTN_MODE_UDOWN, true);
-					//UartPrintf("\r\n --> Switch to up-down mode.");
+
 				} else if (event[2] == PBTN_DOWN) {
 					//UartPrintf("\r\nButton %d: is being pressed.", event[1]);
 				} else if (event[2] == PBTN_ENDN) {
-					//UartPrintf("\r\nButton %d: has been released.", event[1]);
-					//PushButton_SetMode(PUSHBTN_MODE_CLICK, true);
-					//UartPrintf("\r\n --> Switch to click mode.");
+					// no button
 				}
 				break;
 
@@ -320,7 +334,7 @@ int main(void)
 			}
 		} else {
 			// delay here is recommended not to call Evt_DeQueue too frequently
-			HAL_Delay(10);
+			HAL_Delay(5);
 		}
 	}
   /* USER CODE END 3 */
@@ -428,19 +442,16 @@ void UartPrintf(const char *format, ...)
 {
 	char buffer[128];
 	uint16_t size;
+	uint8_t tries = 100;
 	va_list args;
 
 	va_start(args, format);
 	size = vsprintf(buffer, format, args);
 	va_end(args);
-	CDC_Transmit_FS((uint8_t*)buffer, size);
-	//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, size, 1000);
-}
-
-void Encoder_Init()
-{
-   // register pushbutton main routine
-   //	UsrTimer_Set(PUSHBTN_TMR_PERIOD, 0, PushButton_Routine);
+	while (USBD_BUSY == CDC_Transmit_FS((uint8_t*)buffer, size) && tries--)
+		{
+			HAL_Delay(5);
+		}
 }
 
 /** This function returns the state (click/release) of the pushbuttons
@@ -473,109 +484,14 @@ uint8_t PushButton_Read()
 
 	return buttons;
 }
-// test a KY-040 style rotary encoder module on a blue pill board
-// uncomment either LIBMAPLE_CORE or STM32DUINO_CORE
-//#define LIBMAPLE_CORE
-//#define STM32DUINO_CORE
-// for STM32DUINO_CORE be sure to select a serial port in the tools menu
-
-// define encoder pins
-// clock and data are from the silkscreen on the encoder module
-#define ENC_CLK PB8
-#define ENC_DATA PB9
-
-// call this from the systick interrupt every millisecond
-// modified from the original code by dannyf
-// at https://github.com/dannyf00/My-MCU-Libraries---2nd-try/blob/master/encoder1.c
-int encoder1_read(void)
-{
-  volatile static uint8_t ABs = 0;
-  ABs = (ABs << 2) & 0x0f; //left 2 bits now contain the previous AB key read-out;
-  ABs |= (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_8) << 1) | HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_9);
-  switch (ABs)
-  {
-    case 0x0d:
-      return +1;
-      break;
-    case 0x0e:
-      return -1;
-      break;
-  }
-  return 0;
-}
-// generic encoder read with two pins
-int encoder_read(GPIO_TypeDef *clk_bank, uint16_t clk_pin, GPIO_TypeDef *data_bank, uint16_t data_pin)
-{
-  volatile static uint8_t ABs = 0;
-  ABs = (ABs << 2) & 0x0f; //left 2 bits now contain the previous AB key read-out;
-  ABs |= (HAL_GPIO_ReadPin(clk_bank, clk_pin) << 1) | HAL_GPIO_ReadPin(data_bank, data_pin);
-  switch (ABs)
-  {
-    case 0x0d:
-      return +1;
-      break;
-    case 0x0e:
-      return -1;
-      break;
-  }
-  return 0;
-}
-
-#define MAX_ENCODER_INTERVAL 100
-#define MAX_ENCODER_DIVIDER 25
-
-void encoder1_routine_1ms() {
-	static unsigned int msecs_since_last;
-	static int duration = 0;
-	static int encoder_1_value = 0;
-	static int delta = 0;
-
-	uint8_t mult = 0;
-
-	uint8_t event[EVT_QWIDTH];
-
-	// increment duration
-	duration--;
-
-	msecs_since_last++;
-	if (msecs_since_last > MAX_ENCODER_INTERVAL) msecs_since_last = MAX_ENCODER_INTERVAL;
-	mult = msecs_since_last >= MAX_ENCODER_INTERVAL ? 1 : (uint8_t)((MAX_ENCODER_INTERVAL - msecs_since_last)/ MAX_ENCODER_DIVIDER)+1;
-
-	// read encoder values
-	delta = encoder1_read();
-	if (delta) msecs_since_last = 0;
-	encoder_1_value += delta * mult;
 
 
-	if (duration < 0) {
-		if (encoder_1_value < 0) {
-			event[0] = EVT_ENCODER_DOWN;
-			event[2] = (uint8_t) (-encoder_1_value);
-			event[1] = 1;
-
-			// post the event to indicate the end of the down state
-			Evt_EnQueue(event);
-		}
-
-		if (encoder_1_value > 0) {
-			event[0] = EVT_ENCODER_UP;
-			event[2] = (uint8_t) (encoder_1_value);
-			event[1] = 1;
-
-			// post the event to indicate the end of the down state
-			Evt_EnQueue(event);
-		}
-		duration = reg_r;
-		encoder_1_value = 0;
-	}
-
-}
 /** SysTick callback function override.
  */
 void SysTick_Handler_1ms()
 {
 	// UsrTimer_Routine will have 1msec resolution
-	encoder1_routine_1ms();
+	//encoder1_routine_1ms();
 	UsrTimer_Routine();
 	return;
 }

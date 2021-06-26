@@ -37,7 +37,8 @@ _Min_Stack_Size = 0x400 ;	/* required amount of stack */
 MEMORY
 {
   RAM    (xrw)    : ORIGIN = 0x20000000,   LENGTH = 20K
-  FLASH    (rx)    : ORIGIN = 0x8000000,   LENGTH = 64K
+  FLASH    (rx)    : ORIGIN = 0x8000000,   LENGTH = 63K
+  CONFIG (rx)     : ORIGIN = 0x801FC00, LENGTH = 1K
 }
 
 /* Sections */
@@ -76,6 +77,15 @@ SECTIONS
     *(.rodata*)        /* .rodata* sections (constants, strings, etc.) */
     . = ALIGN(4);
   } >FLASH
+  
+  /* Config data into "CONFIG" Rom type memory */
+  .config :
+  {
+    . = ALIGN(4);
+    *(.config)   /* .config sections (constants, strings, etc.) */
+    *(.config*)   /* .config* sections (constants, strings, etc.) */
+    . = ALIGN(4);
+  } >CONFIG
 
   .ARM.extab   : {
     . = ALIGN(4);

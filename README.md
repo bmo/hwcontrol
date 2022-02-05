@@ -1,6 +1,8 @@
 # hwcontrol
 STM32 Hardware for buttons, rotary encoder, etc
 
+see https://github.com/bmo/tuning-knob-pcboard for some KiCAD files to support this project.
+
 
 Credits
 

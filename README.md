@@ -1,5 +1,7 @@
 # hwcontrol
-STM32 Hardware for buttons, rotary encoder, etc
+STM32 Hardware for buttons, rotary encoder, etc.
+
+Compatible with PowerSDR, SmartSDR, and Remote Ham Radio (use a knob with RHR!)
 
 see https://github.com/bmo/tuning-knob-pcboard for some KiCAD files to support this project.
 

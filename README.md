@@ -1,4 +1,4 @@
-# hwcontrol - A tuning knob for Flex Radio, RHR, SmartSDR
+# hwcontrol - A tuning knob for Flex Radio SmartSDR, Remote Ham Radio (RHR), PowerSDR
 Now you can build your own knob (BYOK!)
 
 This is a STM32-based project for a tuning knob with pushbuttons and lights. 
